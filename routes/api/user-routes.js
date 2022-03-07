@@ -58,6 +58,7 @@ router.get('/', (req, res) => {
                 // req.body is new data to use in the update
                 // req.params.id is to show where we will put this new data 
                 User.update(req.body, {
+                    individualHooks: true,
                     where: {
                         id: req.params.id
                     }
