@@ -12,7 +12,8 @@ router.get('/', (req, res) => {
     console.log('======================');
     Post.findAll({
             // query config: specify the information about the posts to populate
-            attributes: ['id', 'post_url', 'title', 'created_at'],
+            attributes: ['id', 'post_url', 'title', 'created_at',
+            [sequelize.literal('(SELECT COUNT(*) FROM vote WHERE post.id = vote.post_id)'), 'vote_count']],
             // include property is expressed as array
             include: [{
                 // way to define the object
@@ -32,12 +33,19 @@ router.get('/:id', (req, res) => {
             where: {
                 id: req.params.id
             },
-            attributes: ['id', 'post_url', 'title', 'created_at'],
+            attributes: ['id', 'post_url', 'title', 'created_at',
+            [sequelize.literal('(SELECT COUNT(*) FROM vote WHERE post.id = vote.post_id)'), 'vote_count']],
             include: [
                 // retrieve usernmae in user table
                 {
-                    model: User,
-                    attributes: ['username']
+                    model: Post,
+                    attributes: ['id', 'title', 'post_url', 'created_at']
+                },
+                {
+                    model: Post,
+                    attributes: ['title'],
+                    through: Vote,
+                    as: 'voted_posts'
                 }
             ]
         })
