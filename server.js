@@ -13,6 +13,6 @@ app.use(routes);
 
 // turn on connection to db and server
 // force: false is a configuration parameter; by changing it to true, the database connection must sync with the model definitions and associations, by forcing the sync method to true, we will make the tables re-create if there are any association changes similar to DROP TABLE IF EXISTS; overwritten and re-created
-sequelize.sync({ force: false }).then(() => {
+sequelize.sync({ force: true }).then(() => {
     app.listen(PORT, () => console.log('Now listening'));
 });
