@@ -1,5 +1,5 @@
-const sequelize = require('../../config/connection');
 const router = require('express').Router();
+const sequelize = require('../../config/connection');
 const {
     Post,
     User,
@@ -12,15 +12,28 @@ router.get('/', (req, res) => {
     console.log('======================');
     Post.findAll({
             // query config: specify the information about the posts to populate
-            attributes: ['id', 'post_url', 'title', 'created_at',
+            attributes: [
+                'id',
+                'post_url',
+                'title',
+                'created_at',
                 [sequelize.literal('(SELECT COUNT(*) FROM vote WHERE post.id = vote.post_id)'), 'vote_count']
             ],
             // include property is expressed as array
             include: [{
-                // way to define the object
-                model: User,
-                attributes: ['username']
-            }]
+                    // way to define the object
+                    model: Comment,
+                    attributes: ['id', 'comment_text', 'post_id', 'user_id', 'created_at'],
+                    include: {
+                        model: User,
+                        attributes: ['username']
+                    }
+                },
+                {
+                    model: User,
+                    attributes: ['username']
+                }
+            ]
         })
         .then(dbPostData => res.json(dbPostData))
         .catch(err => {
@@ -40,14 +53,16 @@ router.get('/:id', (req, res) => {
             include: [
                 // retrieve usernmae in user table
                 {
-                    model: Post,
-                    attributes: ['id', 'title', 'post_url', 'created_at']
+                    model: Comment,
+                    attributes: ['id', 'comment_text', 'post_id', 'user_id', 'created_at'],
+                    include: {
+                        model: User,
+                        attributes: ['username']
+                    }
                 },
                 {
-                    model: Post,
-                    attributes: ['title'],
-                    through: Vote,
-                    as: 'voted_posts'
+                    model: User,
+                    attributes: ['username']
                 }
             ]
         })
@@ -83,8 +98,13 @@ router.post('/', (req, res) => {
 // upvote involves two queries: using vote model to create a vote and querying on that post to get updated vote count
 router.put('/upvote', (req, res) => {
     // custom static method created in models/Post.js
-    Post.upvote(req.body, {
-            Vote
+    Post.upvote({
+            ...req.body,
+            user_id: req.session.user_id
+        }, {
+            Vote,
+            Comment,
+            User
         })
         .then(updatedPostData => res.json(updatedPostData))
         .catch(err => {
@@ -143,5 +163,26 @@ router.put('/:id', (req, res) => {
         });
 });
 
+router.delete('/:id', (req, res) => {
+    console.log('id', req.params.id);
+    Post.destroy({
+            where: {
+                id: req.params.id
+            }
+        })
+        .then(dbPostData => {
+            if (!dbPostData) {
+                res.status(404).json({
+                    message: 'No post found with this id'
+                });
+                return;
+            }
+            res.json(dbPostData);
+        })
+        .catch(err => {
+            console.log(err);
+            res.status(500).json(err);
+        });
+});
 // we want to assign the router once Express API endpoints have been defined
 module.exports = router;
