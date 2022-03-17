@@ -1,5 +1,6 @@
 // set up the main homepage route
 const router = require('express').Router();
+const { route } = require('.');
 const sequelize = require('../config/connection');
 const { Post, User, Comment, Vote } = require('../models');
 
@@ -40,4 +41,7 @@ router.get('/', (req, res) => {
     });
 });
 
+router.get('/login', (req, res) => {
+  res.render('login');
+})
 module.exports = router;
